@@ -5,8 +5,9 @@ while True:
     list.append(input_list)
     print(f"Quotes : {list}")
     #print("Random Selected Quote: " + random.choice(list))
+    user_input = input(" -- Type 'Exit' to quit\n -- Press any key to continue: ").lower()
 
-    if input("Exit? (Yes) ---- ") == "Yes" or "Y" or "y": 
+    if user_input in ["exit", "yes", "y"]:
         print("Random Selected Quote: " + random.choice(list))
         break
     else:
