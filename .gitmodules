@@ -1,0 +1,3 @@
+[submodule "ojt"]
+	path = ojt
+	url = https://github.com/DevAdora/ojt.git
