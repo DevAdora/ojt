@@ -5,21 +5,6 @@ quote_id = 1
 
 quotes_txt_path ="C:/Users/Cloud Account/GitLabs/ojt-python/Programming Activity/quotes.txt"
 
-def get_next_quote_id():
-    global quote_id
-    try:
-        with open(quotes_txt_path, "r") as file:
-            lines = file.readlines()
-            if lines:
-                last_line = lines[-1]
-                last_id = int(last_line.split(":")[0])
-                quote_id = last_id + 1
-            else:
-                quote_id = 1
-    except FileNotFoundError:
-        quote_id = 1
-
-
 def display_random_quote():
     selected_quote = random.choice(list(quotes_dict.values()))
     quote, author = selected_quote
@@ -32,21 +17,14 @@ def display_selected_quotes(count):
     for quote, author in selected_quotes:
         print(f"\"{quote}\" by {author}")
 
-def search_quote(search_term, quotes_txt_path):
+def search_quote(search_term):
     found = False
-    try:
-        with open(quotes_txt_path, "r") as file:
-            lines = file.readlines()
-        
-        for line in lines:
-            if search_term.lower() in line.lower(): 
-                print(line.strip()) 
-                found = True
-                
-        if not found:
-            print("Quote cannot be found.")
-    except FileNotFoundError:
-        print(f"Error: The file at {quotes_txt_path} was not found.")
+    for key, (quote, author) in quotes_dict.items():
+        if search_term.lower() in quote.lower():
+            print(f"{key}: \"{quote}\" by {author}")
+            found = True
+    if not found:
+        print("Quote cannot be found.")
 
 def search_author(search_term):
     found = False
@@ -59,218 +37,198 @@ def search_author(search_term):
 
 def delete_quote():
     print("All Quotes:")
-    try:
-        with open(quotes_txt_path, "r") as file:
-            lines = file.readlines()
-
-        for line in lines:
-            print(line.strip())
-
-        search_term = input("Enter the quote you want to delete or the quote ID: ")
-
-        if search_term.isdigit():
-            quote_id_to_delete = int(search_term)
-            try:
-                line_to_delete = lines[quote_id_to_delete - 1]
-                confirm = input(f"Are you sure you want to delete: {line_to_delete.strip()} (yes/no): ").lower()
+    for key, (quote, author) in quotes_dict.items():
+        print(f"{key}: \"{quote}\" by {author}")
+    search_term = input("Enter the quote you want to delete or the key ID: ")
+    
+    if search_term.isdigit(): 
+        key_id = int(search_term)
+        if key_id in quotes_dict:
+            quote, author = quotes_dict[key_id]
+            confirm = input(f"Are you sure you want to delete the quote \"{quote}\" by {author}? (yes/no): ").lower()
+            if confirm in ["yes", "y"]:
+                del quotes_dict[key_id]
+                print(f"Quote \"{quote}\" by {author} has been deleted.")
+            else:
+                print("Deletion cancelled.")
+        else:
+            print("Quote ID cannot be found.")
+    else: 
+        found = False
+        for key, (quote, author) in quotes_dict.items():
+            if search_term.lower() in quote.lower():  
+                print(f"{key}: \"{quote}\" by {author}")
+                found = True
+        if found:
+            key_id = int(input("Enter the key ID of the quote you want to delete: "))
+            if key_id in quotes_dict:
+                quote, author = quotes_dict[key_id]
+                confirm = input(f"Are you sure you want to delete the quote \"{quote}\" by {author}? (yes/no): ").lower()
                 if confirm in ["yes", "y"]:
-                    del lines[quote_id_to_delete - 1] 
-                    print(f"Quote {quote_id_to_delete} has been deleted.")
-                    with open(quotes_txt_path, "w") as file:
-                        file.writelines(lines)
-                    refresh_quotes_dict()
-                else:
-                    print("Deletion cancelled.")
-            except IndexError:
-                print("Quote ID cannot be found.")
-        else: 
-            found = False
-            for line in lines:
-                if search_term.lower() in line.lower():
-                    print(f"Found: {line.strip()}")
-                    found = True
-
-            if found:
-                confirm = input("Are you sure you want to delete this quote? (yes/no): ").lower()
-                if confirm in ["yes", "y"]:
-                    lines = [line for line in lines if search_term.lower() not in line.lower()]  
-                    print(f"Quote containing '{search_term}' has been deleted.")
-                    with open(quotes_txt_path, "w") as file:
-                        file.writelines(lines)
-                    refresh_quotes_dict()
+                    del quotes_dict[key_id]
+                    print(f"Quote \"{quote}\" by {author} has been deleted.")
                 else:
                     print("Deletion cancelled.")
             else:
-                print("Quote cannot be found.")
-    except FileNotFoundError:
-        print(f"Error: The file at {quotes_txt_path} was not found.")
+                print("Quote ID cannot be found.")
+        else:
+            print("Quote cannot be found.")
+
 def delete_author():
+    # Group quotes by author
     authors_dict = {}
     for key, (quote, author) in quotes_dict.items():
         if author not in authors_dict:
             authors_dict[author] = []
         authors_dict[author].append((key, quote))
-
+    
+    # Display all authors with their quotes in the desired format
     print("All Authors and their Quotes:")
     author_index = 1
-    author_keys = {} 
+    author_keys = {}  # Store mapping of index to author
     for author, quotes in authors_dict.items():
-        author_keys[author_index] = author 
+        author_keys[author_index] = author  # Map index to author name
         print(f"{author_index}. {author}:")
         for _, quote in quotes:
             print(f"    - {quote}")
         author_index += 1
-
+    
+    # Prompt the user to select an author or key
     search_term = input("Enter the exact author name or the key ID to delete: ")
-
-    if search_term.isdigit(): 
+    
+    if search_term.isdigit():  # Handle selecting by key ID
         key_id = int(search_term)
-
+        
+        # Find the author corresponding to the key_id
         if key_id in author_keys:
             author_to_delete = author_keys[key_id]
             quotes_to_delete = [key for key, (quote, a) in quotes_dict.items() if a.lower() == author_to_delete.lower()]
-
+            
             print(f"All quotes by {author_to_delete}:")
             for key in quotes_to_delete:
                 quote, author = quotes_dict[key]
                 print(f"{key}: \"{quote}\" by {author}")
-
+                
             confirm = input(f"Are you sure you want to delete all quotes by {author_to_delete}? (yes/no): ").lower()
             if confirm in ["yes", "y"]:
                 for key in quotes_to_delete:
                     quote, author = quotes_dict[key]
                     del quotes_dict[key]
                     print(f"Quote \"{quote}\" by {author} has been deleted.")
-                refresh_quotes_dict()
             else:
                 print("Deletion cancelled.")
         else:
             print("Invalid author ID.")
-    else:
+    
+    else:  # Search by part of the author's name
         found = False
         matching_authors = []
 
+        # Check if any author's name contains the search term
         for author, quotes in authors_dict.items():
             if search_term.lower() in author.lower():
                 matching_authors.append(author)
                 found = True
-
+                #print(f"{author}:")
+                #for key, quote in quotes:
+                    #print(f"    - {quote}")
+        
         if found:
             print("\nSelect the number of the author you want to delete:")
             for idx, author in enumerate(matching_authors, 1):
                 print(f"{idx}. {author}")
-
+            
+            # Let the user select the number corresponding to the author
             author_selection = int(input("Enter the number corresponding to the author you want to delete: "))
-
+            
+            # Get the selected author
             selected_author = matching_authors[author_selection - 1]
             quotes_to_delete = [key for key, (quote, a) in quotes_dict.items() if a.lower() == selected_author.lower()]
             print(f"DELETING {selected_author}:")
+            print(f"ALL WORKS by {selected_author}:")
             for key in quotes_to_delete:
                 quote, author = quotes_dict[key]
                 print(f"{key}: \"{quote}\" by {author}")
-
+            
             confirm = input(f"Are you sure you want to delete all quotes by {selected_author}? (yes/no): ").lower()
             if confirm in ["yes", "y"]:
                 for key in quotes_to_delete:
                     quote, author = quotes_dict[key]
                     del quotes_dict[key]
                     print(f"Quote \"{quote}\" by {author} has been deleted.")
-                refresh_quotes_dict()
             else:
                 print("Deletion cancelled.")
         else:
             print("No authors found with that name or letter.")
 
-def refresh_quotes_dict():
-    """Rebuild quotes_dict and update the quote_id after a delete operation."""
-    global quote_id
-    quotes_dict.clear()
-    get_next_quote_id()
 
-    try:
-        with open(quotes_txt_path, "r") as file:
-            lines = file.readlines()
-            for line in lines:
-                line = line.strip()
-                parts = line.split(":")
-                if len(parts) > 1:
-                    current_id = int(parts[0].strip())
-                    quote, author = parts[1].split(" by ")
-                    quotes_dict[current_id] = (quote.strip().strip('"'), author.strip())
-            get_next_quote_id() 
-    except FileNotFoundError:
-        print("Quotes file not found!")
-
-
-def update_quote(quotes_txt_path):
+def update_quote():
     print("All Quotes:")
-    try:
-        with open(quotes_txt_path, "r") as file:
-            lines = file.readlines()
-        
-        for line in lines:
-            print(line.strip())
-        
-        search_term = input("Enter the quote you want to update or the quote ID: ")
-
-        if search_term.isdigit():  
-            quote_id = int(search_term)
-            try:
-                line_to_update = lines[quote_id - 1]
-                confirm = input(f"Are you sure you want to update: {line_to_update.strip()} (yes/no): ").lower()
+    for key, (quote, author) in quotes_dict.items():
+        print(f"{key}: \"{quote}\" by {author}")
+    search_term = input("Enter the quote you want to update or the key ID: ")
+    
+    if search_term.isdigit(): 
+        key_id = int(search_term)
+        if key_id in quotes_dict:
+            quote, author = quotes_dict[key_id]
+            confirm = input(f"Are you sure you want to update the quote \"{quote}\" by {author}? (yes/no): ").lower()
+            if confirm in ["yes", "y"]:
+                new_quote = input("Enter the new quote: ")
+                quotes_dict[key_id] = (new_quote, author)
+                print(f"Quote \"{quote}\" by {author} has been updated to \"{new_quote}\".")
+            else:
+                print("Update cancelled.")
+        else:
+            print("Quote ID cannot be found.")
+    else: 
+        found = False
+        for key, (quote, author) in quotes_dict.items():
+            if search_term.lower() in quote.lower():  
+                print(f"{key}: \"{quote}\" by {author}")
+                found = True
+        if found:
+            key_id = int(input("Enter the key ID of the quote you want to update: "))
+            if key_id in quotes_dict:
+                quote, author = quotes_dict[key_id]
+                confirm = input(f"Are you sure you want to update the quote \"{quote}\" by {author}? (yes/no): ").lower()
                 if confirm in ["yes", "y"]:
                     new_quote = input("Enter the new quote: ")
-                    new_author = input("Enter the new author: ")
-                    lines[quote_id - 1] = f"{quote_id}: \"{new_quote}\" by {new_author}\n"  #
-                    with open(quotes_txt_path, "w") as file:
-                        file.writelines(lines)
-                    print(f"Quote {quote_id} has been updated.")
+                    quotes_dict[key_id] = (new_quote, author)
+                    print(f"Quote \"{quote}\" by {author} has been updated to \"{new_quote}\".")
                 else:
                     print("Update cancelled.")
-            except IndexError:
-                print("Quote ID cannot be found.")
-        else:  # Searching by part of the quote text
-            found = False
-            for idx, line in enumerate(lines):
-                if search_term.lower() in line.lower():
-                    print(f"Found: {line.strip()} (ID: {idx + 1})")
-                    found = True
-
-            if found:
-                quote_id = int(input("Enter the ID of the quote you want to update: "))
-                new_quote = input("Enter the new quote: ")
-                new_author = input("Enter the new author: ")
-                lines[quote_id - 1] = f"{quote_id}: \"{new_quote}\" by {new_author}\n"  # Update the line
-                with open(quotes_txt_path, "w") as file:
-                    file.writelines(lines)
-                print(f"Quote {quote_id} has been updated.")
             else:
-                print("Quote cannot be found.")
-    except FileNotFoundError:
-        print(f"Error: The file at {quotes_txt_path} was not found.")
+                print("Quote ID cannot be found.")
+        else:
+            print("Quote cannot be found.")
 
 def update_author():
+    # Group quotes by author
     authors_dict = {}
     for key, (quote, author) in quotes_dict.items():
         if author not in authors_dict:
             authors_dict[author] = []
         authors_dict[author].append((key, quote))
     
+    # Display all authors with their quotes in the desired format
     print("All Authors and their Quotes:")
     author_index = 1
-    author_keys = {} 
+    author_keys = {}  # Store mapping of index to author
     for author, quotes in authors_dict.items():
-        author_keys[author_index] = author 
+        author_keys[author_index] = author  # Map index to author name
         print(f"{author_index}. {author}:")
         for _, quote in quotes:
             print(f"    - {quote}")
         author_index += 1
     
+    # Prompt the user to select an author or key
     search_term = input("Enter the exact author name or the key ID to update: ")
     
-    if search_term.isdigit(): 
+    if search_term.isdigit():  # Handle selecting by key ID
         key_id = int(search_term)
         
+        # Find the author corresponding to the key_id
         if key_id in author_keys:
             author_to_update = author_keys[key_id]
             quotes_to_update = [key for key, (quote, a) in quotes_dict.items() if a.lower() == author_to_update.lower()]
@@ -292,10 +250,11 @@ def update_author():
         else:
             print("Invalid author ID.")
     
-    else:  
+    else:  # Search by part of the author's name
         found = False
         matching_authors = []
 
+        # Check if any author's name contains the search term
         for author, quotes in authors_dict.items():
             if search_term.lower() in author.lower():
                 matching_authors.append(author)
@@ -309,8 +268,10 @@ def update_author():
             for idx, author in enumerate(matching_authors, 1):
                 print(f"{idx}. {author}")
             
+            # Let the user select the number corresponding to the author
             author_selection = int(input("Enter the number corresponding to the author you want to update: "))
             
+            # Get the selected author
             selected_author = matching_authors[author_selection - 1]
             quotes_to_update = [key for key, (quote, a) in quotes_dict.items() if a.lower() == selected_author.lower()]
             
@@ -331,46 +292,20 @@ def update_author():
         else:
             print("No authors found with that name or letter.")
 
-def display_file_in_box(quotes_txt_path):
-    try:
-        with open(quotes_txt_path, "r") as file:
-            content = file.read()
-
-        box_width = 80  
-
-        print("-------------------- Welcome to Quotes and Author Management System --------------------")
-        print("|" + " " * (box_width + 6) + "|")
-        print("|" + " " * (box_width + 6) + "|")
-            
-        lines = content.splitlines() 
-            
-        for line in lines:
-            print("| " + line.ljust(box_width + 4) + " |")  
-
-        print("|" + " " * (box_width + 4) + "  |")
-        print("|" + " " * (box_width + 4) + "  |")
-        print("-------------------- ********************************************** --------------------")
-
-    except FileNotFoundError:
-        print(f"Error: The file at {quotes_txt_path} was not found.")
-
 def main():
     global quote_id
-    global quotes_txt_path
-    display_file_in_box(quotes_txt_path)
-
     while True:
         user_input = input("-------------------------------------------------------------------\n| -- Press 'A' to add Quotes and Author\n| -- Press 'D' to display quotes\n| -- Press 'R' to randomly display a quote\n| -- Press 'S' to search\n| -- Press 'U' to update quote or author\n| -- Type 'All' to display all list of quotes and author\n| -- Type 'Del' to delete quote or Author\n| -- Type 'Exit' to quit\n| -- Press any key to continue: ").lower()
         if user_input == 'a':
             input_quote = input("Enter a quote: ")
             input_author = input("Enter the author: ")
             quotes_dict[quote_id] = (input_quote, input_author)
-            with open(quotes_txt_path, "a") as file:
-                file.write(f"{quote_id}: \"{input_quote}\" by {input_author}\n")
             quote_id += 1
-            display_file_in_box(quotes_txt_path)
+            print("Quotes:")
             for key, (quote, author) in quotes_dict.items():
                 print(f"{key}: \"{quote}\" by {author}")
+                with open(quotes_txt_path, "a") as file:
+                    file.write(f"{key}: \"{quote}\" by {author}\n")
         elif user_input == 'd':
             try:
                 num = int(input("How many quotes would you like to see? "))
@@ -397,12 +332,14 @@ def main():
         elif user_input in ["u", "update"]:
             update_option = input("-------------------------------------------------------------------\n| -- Press 'Q' to update Quotes\n| -- Press 'A' to update Authors\n| -- Press any key to continue: ").lower()
             if update_option == 'q':
-                update_quote(quotes_txt_path)
+                update_quote()
             elif update_option == 'a':
                 update_author()
         elif user_input in ["all", "list"]:
             print("All Quotes and Authors")
-            display_file_in_box(quotes_txt_path)
+            file = open(quotes_txt_path, "r")
+            print(file.read())
+            file.close()
            #for key, (quote, author) in quotes_dict.items():
                 #print(f"{key}: \"{quote}\" by {author}")
         elif user_input in ["del", "delete"]:
