@@ -4,6 +4,8 @@ quote_id = 1
 quotes_txt_path ="C:/Users/Cloud Account/GitLabs/ojt-python/Programming Activity/quotes.txt"
 
 
+
+
 def get_next_quote_id():
     global quote_id
     try:
@@ -41,6 +43,54 @@ def refresh_quotes_dict():
             get_next_quote_id()
     except FileNotFoundError:
         print("Quotes file not found!")
+        
+def display_selected_quotes(num):
+    try:
+        with open(quotes_txt_path, "r") as file:
+            lines = file.readlines()
+        
+        quotes = []
+        for line in lines:
+            parts = line.split(":")
+            if len(parts) > 1:
+                quote, author = parts[1].split(" by ")
+                quotes.append((quote.strip().strip('"'), author.strip()))
+        
+        if quotes:
+            if num > len(quotes):
+                print(f"There are only {len(quotes)} quotes available.")
+                num = len(quotes)
+            selected_quotes = random.sample(quotes, num)
+            for quote, author in selected_quotes:
+                print(f"\"{quote}\" by {author}")
+        else:
+            print("No quotes available to display.")
+    except FileNotFoundError:
+        print(f"Error: The file at {quotes_txt_path} was not found.")
+        
+        
+def display_random_quote():
+    try:
+        with open(quotes_txt_path, "r") as file:
+            lines = file.readlines()
+        
+        quotes = []
+        for line in lines:
+            parts = line.split(":")
+            if len(parts) > 1:
+                quote, author = parts[1].split(" by ")
+                quotes.append((quote.strip().strip('"'), author.strip()))
+        
+        if quotes:
+            selected_quote = random.choice(quotes)
+            quote, author = selected_quote
+            print(f"Random Selected Quote: \"{quote}\" by {author}")
+        else:
+            print("No quotes available to display.")
+    except FileNotFoundError:
+        print(f"Error: The file at {quotes_txt_path} was not found.")
+
+        
 def add_new_quote():
     """Function to add a new quote."""
     global quote_id
@@ -390,6 +440,7 @@ def main():
     global quote_id
     global quotes_txt_path
     global get_next_quote_id
+    refresh_quotes_dict()  # Ensure quotes are loaded from the file at the start
     display_file_in_box(quotes_txt_path)
 
     while True:
@@ -405,15 +456,13 @@ def main():
                 elif num > len(quotes_dict):
                     print("There are not enough quotes to display.")
                 else:
-                    #display_selected_quotes(num)
-                    print("Selected Quotes:")
+                    display_selected_quotes(num)
             except ValueError:
                 print("Invalid input! Please enter a valid number.")
         elif user_input in ["exit", "yes", "y"]:
             break
         elif user_input in ["r", "random"]:
-            #display_random_quote()
-            print("Random Quote:")
+            display_random_quote()
         elif user_input in ["s", "search"]:
             search_option = input("-------------------------------------------------------------------\n| -- Press 'Q' to search for Quotes\n| -- Press 'A' to search for Authors\n| -- Press any key to continue: ").lower()
             if search_option == 'q':
